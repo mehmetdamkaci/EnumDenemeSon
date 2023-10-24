@@ -18,6 +18,7 @@ using System.Windows.Shapes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Operations;
 //using static System.Net.Mime.MediaTypeNames;
 
 
@@ -58,10 +59,16 @@ namespace EnumDeneme
         Window kaydetWindow;
         Button clickedButton;
         ScrollViewer scrollViewer;
+        StackPanel kaydetStack;
 
         List<ComboBox> updatedComboBoxs;
+        List<Button> updatedButtons;
 
         Dictionary<string, string> gridItem = new Dictionary<string, string>();
+        List<ComboBox> gridItemComboList = new List<ComboBox>();
+
+        StackPanel kaydetAnaSayfaButon;
+        Button KaydetButton;
 
         string newPath;
         public MainWindow()
@@ -77,6 +84,7 @@ namespace EnumDeneme
             labels.Clear();
             stackPanel.Children.Clear();
             Log.Clear();
+            buttons.Clear();
 
             if (path == null)
             {
@@ -104,6 +112,9 @@ namespace EnumDeneme
                 StackPanel comboTextBoxPanel = new StackPanel();
                 comboTextBoxPanel.Orientation = Orientation.Horizontal;
 
+                kaydetAnaSayfaButon = new StackPanel();
+                kaydetAnaSayfaButon.Orientation = Orientation.Horizontal;
+
                 Button enumButton = new Button();
                 enumButton.Background = Brushes.DimGray;
                 enumButton.Foreground = Brushes.White;
@@ -126,28 +137,44 @@ namespace EnumDeneme
                 enumTextBox.Name = kvp.Key;
                 enumTextBox.FontWeight = FontWeights.Bold;
                 enumTextBox.Width = 200;
-                
+
                 textBoxes.Add(enumTextBox);
 
                 comboTextBoxPanel.Margin = new Thickness(0, 10, 0, 0);
                 stackPanel.Children.Add(enumButton);
 
-                buttons.Add(enumButton);
+                //buttons.Add(enumButton);
+
+
+                if (buttons.Count > 0)
+                {
+                    foreach (Button btn in buttons)
+                    {
+                        if (enumButton.Name == btn.Name)
+                        {
+                            //comboBoxs.Remove(box);
+                            if (updatedButtons != null ) updatedButtons.Add(btn);
+                        }
+                    }
+                }
 
             }
 
 
-            Button KaydetButton = new Button();
+            KaydetButton = new Button();
             KaydetButton.Content = "Kaydet";
+            KaydetButton.Name = "Kaydet";
             KaydetButton.Background = Brushes.DimGray;
             KaydetButton.Foreground = Brushes.White;
             KaydetButton.FontWeight = FontWeights.Bold;
             KaydetButton.FontSize = 13;
-            KaydetButton.Margin = new Thickness(0, 20, 0, 0);
+            KaydetButton.Margin = new Thickness(30, 20, 0, 0);
             KaydetButton.Click += KaydetClick;
             KaydetButton.Width = 100;
-            stackPanel.Children.Add(KaydetButton);
+            kaydetAnaSayfaButon.Children.Add(KaydetButton);
+            //stackPanel.Children.Add(KaydetButton);
             buttons.Add(KaydetButton);
+
         }
 
         private void buttonMouseLeave(object sender, MouseEventArgs e)
@@ -169,6 +196,7 @@ namespace EnumDeneme
 
         private void enumButtonClick(object sender, RoutedEventArgs e)
         {
+            if(gridItemComboList != null) gridItemComboList.Clear();
             updatedComboBoxs = new List<ComboBox>();
             enumWindow = new Window();
             enumWindow.Width = 400;
@@ -229,6 +257,7 @@ namespace EnumDeneme
                 }
 
                 comboBoxs.Add(comboBox);
+                gridItemComboList.Add(comboBox);
                 labels.Add(valueLabel);
 
                 //comboLabel.Add(valueLabel.Content.ToString(), comboBox);
@@ -342,6 +371,14 @@ namespace EnumDeneme
             {
                 comboBoxs.Remove(combo);
             }
+            if (updatedButtons != null)
+            {
+                foreach (Button btn in updatedButtons)
+                {
+                    //MessageBox.Show(btn.Name);
+                    buttons.Remove(btn);
+                }
+            }
 
             if (comboText != null) comboText.Clear();
             if (comboNames != null) comboNames.Clear();
@@ -355,7 +392,8 @@ namespace EnumDeneme
             foreach (Button button in buttons)
             {
                 button.Visibility = Visibility.Visible;
-                button.IsEnabled = true;
+                //button.IsEnabled = true;
+                clickedButton.IsEnabled = true;
             }
         }
 
@@ -387,11 +425,12 @@ namespace EnumDeneme
                         }
 
                         if (box.Name != selectedBox.Name) box.Items.Remove(selectedItem);
-                        if (!box.Items.Contains(selectedBox.Text))
+                        string changedItem = selectedBox.Text;
+                        if (!box.Items.Contains(changedItem))
                         {
                             box.Items.Remove("");
-                            box.Items.Add(selectedBox.Text);
-                            comboList.Add(selectedBox.Text);
+                            box.Items.Add(changedItem);                            
+                            comboList.Add(changedItem);
                             box.Items.Add("");
                         }                       
                     }
@@ -403,8 +442,8 @@ namespace EnumDeneme
                     //MessageBox.Show(addItem);
                     foreach (ComboBox box in comboBoxs)
                     {
-                        
-                        box.Items.Add(addItem);
+                        if (!box.Items.Contains(addItem)) box.Items.Add(addItem);
+
                         if (box.Items.Contains(""))
                         {
                             box.Items.Remove("");
@@ -416,24 +455,45 @@ namespace EnumDeneme
                 }
             }
 
+
+
+
+
+            comboList = comboList.Distinct().ToList();
+            comboList.Clear();
+            foreach(var item in selectedBox.Items)
+            {
+                comboList.Add(item.ToString());
+            }
             comboList = comboList.Distinct().ToList();
         }
 
         private void enumOKClick(object sender, RoutedEventArgs e)
         {
+
             if (gridItem != null)
             {
-                foreach (ComboBox combo in comboBoxs)
+                foreach (ComboBox combo in gridItemComboList)
                 {
-                    if (gridItem.Keys.Contains(clickedButton.Content.ToString().Trim() + "." + combo.Name))
+                    if (combo.Text != "" )
                     {
-                        gridItem.Remove(clickedButton.Content.ToString().Trim() + "." + combo.Name);
-                        gridItem[clickedButton.Content.ToString().Trim() + "." + combo.Name] = combo.Text;
+                        if (gridItem.Keys.Contains(clickedButton.Content.ToString().Trim() + "." + combo.Name))
+                        {
+
+                            gridItem.Remove(clickedButton.Content.ToString().Trim() + "." + combo.Name);
+                            gridItem[clickedButton.Content.ToString().Trim() + "." + combo.Name] = combo.Text;
+                        }
+                        else
+                        {
+                            if (combo.Text != "") gridItem[clickedButton.Content.ToString().Trim() + "." + combo.Name] = combo.Text;
+
+                        }
                     }
                     else
                     {
-                        gridItem[clickedButton.Content.ToString().Trim() + "." + combo.Name] = combo.Text;
+                        gridItem.Remove(clickedButton.Content.ToString().Trim() + "." + combo.Name);
                     }
+
                 }
             }
 
@@ -442,6 +502,15 @@ namespace EnumDeneme
             {
                 //MessageBox.Show(combo.Name);
                 comboBoxs.Remove(combo);
+            }
+
+            if (updatedButtons != null)
+            {
+                foreach (Button btn in updatedButtons)
+                {
+                    //MessageBox.Show(btn.Name);
+                    buttons.Remove(btn);
+                }
             }
 
 
@@ -472,6 +541,7 @@ namespace EnumDeneme
 
             foreach (Button button in buttons)
             {
+                if (button.IsEnabled)
                 button.Visibility = Visibility.Visible;
             }
 
@@ -482,49 +552,98 @@ namespace EnumDeneme
             comboText = new List<string>();
             comboNames = new List<string>();
 
+
+
+
             foreach (ComboBox combo in comboBoxs)
             {
                 //MessageBox.Show(combo.Text);
-
-                comboTextItem[combo.Name] = combo.Text;
-                comboText.Add(combo.Text);
+                comboList.Remove(combo.Text);
+                comboTextItem[combo.Name] = combo.Text;                
+                if (combo.Text != "") comboText.Add(combo.Text);
                 comboNames.Add(combo.Name);
-            }
-           
+            }            
+
+
             foreach (var text in comboText)
             {
 
                 if (text != "" & comboText.Where(x => x.Equals(text)).Count() > 2)
-                {
+                {                    
                     MessageBox.Show(text + " elemanı birden fazla enum ile eşleşemez.");
                     clickedButton.IsEnabled = true;
                     return;
                 }
             }
-            
 
-            for(int i = 0; i < buttons.Count; i++)
+            for (int i = 0; i < buttons.Count; i++)
             {
-
-                foreach (var text in comboText)
+                if (comboText.Contains(buttons[i].Name) || buttons[i].Name == "Kaydet")
                 {
-                    if (text != "")
+                    if (buttons[i].Name != "Kaydet")
                     {
-                        if (buttons[i].Name == text) 
-                        {
-                            //MessageBox.Show(text);
-                            buttons[i].IsEnabled = false;
-                            buttons[i].Foreground = Brushes.Black;
-                            //stackPanel.Children.Remove(buttons[i]);
-                        } 
-                        comboList.Remove(text);
+                        buttons[i].IsEnabled = false;
+                        buttons[i].Foreground = Brushes.Black;
                     }
-                        
                 }
-                
+                else 
+                {
+                    buttons[i].Visibility = Visibility.Collapsed;
+                    buttons[i].IsEnabled = true;
+                } 
+
+                //comboList.Remove(text);
+
             }
 
-            foreach(TextBox textBox in textBoxes)
+            clickedButton.Visibility = Visibility.Visible;
+            clickedButton.Width = clickedButton.Width * 1.5;
+            clickedButton.IsEnabled = false;
+            clickedButton.MouseLeave -= buttonMouseLeave;
+            clickedButton.MouseLeave -= buttonMouseMove;
+
+            Button anaSayfa = new Button();
+            anaSayfa.Content = "Ana Sayfa";
+            anaSayfa.Click += clickedAnaSayfa;
+            anaSayfa.Background = Brushes.DimGray;
+            anaSayfa.FontWeight = FontWeights.Bold;
+            anaSayfa.Foreground = Brushes.White;
+            anaSayfa.Width = 100;
+            anaSayfa.Margin = new Thickness(100, 20, 0, 0);
+            anaSayfa.Height = 25;
+            kaydetAnaSayfaButon.Children.Add(anaSayfa);
+            if (!stackPanel.Children.Contains(kaydetAnaSayfaButon)) stackPanel.Children.Add(kaydetAnaSayfaButon);
+            
+
+            //MessageBox.Show(buttons.Count.ToString());
+
+            //for(int i = 0; i < buttons.Count; i++)
+            //{
+
+            //    foreach (var text in comboText)
+            //    {
+            //        if (text != "")
+            //        {
+            //            if (buttons[i].Name == text) 
+            //            {
+
+            //                buttons[i].IsEnabled = false;
+            //                buttons[i].Foreground = Brushes.Black;
+            //                //stackPanel.Children.Remove(buttons[i]);
+            //            } 
+            //            else
+            //            {
+            //                MessageBox.Show(buttons[i].Name);
+            //                //buttons[i].Visibility = Visibility.Collapsed;
+            //            }
+            //            comboList.Remove(text);
+            //        }
+
+            //    }
+
+            //}
+
+            foreach (TextBox textBox in textBoxes)
             {
                 if (textBox.Name == buttonContent)
                 {
@@ -540,11 +659,29 @@ namespace EnumDeneme
                     }
                 }
             }
-            clickedButton.IsEnabled = true;
+            //clickedButton.IsEnabled = true;
             //clickedButton.Width = 200;
             //clickedButton.MouseLeave += buttonMouseLeave;
             //clickedButton.MouseMove -= buttonMouseMove;
             enumWindow.Close();
+        }
+
+        private void clickedAnaSayfa(object sender, RoutedEventArgs e)
+        {
+            Button button = sender as Button;
+            button.Margin = new Thickness(0, 20, 0, 0);
+            button.Visibility = Visibility.Collapsed;
+
+            KaydetButton.Margin = new Thickness(50,20, 0, 0);
+
+            clickedButton.IsEnabled = true;
+
+            if (kaydetStack!=null) kaydetStack.Visibility = Visibility.Collapsed;
+
+            foreach (Button btn in buttons)
+            {
+                btn.Visibility = Visibility.Visible;
+            }
         }
 
         public Dictionary<string, List<string>> ProcessEnumCode(string enumCode)
@@ -634,8 +771,7 @@ namespace EnumDeneme
             kaydetWindow.Background = backgroundBrush;
 
             kaydetWindow.Closed += kaydetWindowClosed;
-
-            StackPanel kaydetStack = new StackPanel();
+            kaydetStack = new StackPanel();
 
             kaydetStack.VerticalAlignment = VerticalAlignment.Center;
             kaydetStack.HorizontalAlignment = HorizontalAlignment.Center;
@@ -700,31 +836,31 @@ namespace EnumDeneme
 
             matchGrid.Columns.Add(enumName);
             matchGrid.Columns.Add(enumValue);   
-
-            
-
+           
             Button OkKaydetLog = new Button();
             OkKaydetLog.Content = "OK";
             OkKaydetLog.Width = 50;
             OkKaydetLog.Margin = new Thickness(20);
             OkKaydetLog.Click += OkKaydetLog_Click;
 
-            kaydetWindow.Content = kaydetStack;
+            //kaydetWindow.Content = kaydetStack;
 
 
             string newCsText = csText;
             List<string> comboText = new List<string>();
 
+
             if (gridItem != null)
             {
                 for (int i = 0; i < gridItem.Count; i++)
                 {
-                    if (gridItem.Values.ElementAt(i) == "")
+                    if (gridItem.Values.ElementAt(i).Trim() == "" || gridItem.Keys.ElementAt(i).Trim() == "")
                     {
                         gridItem.Remove(gridItem.Keys.ElementAt(i));
                     }
                 }
             }
+
 
             matchGrid.ItemsSource = gridItem.ToList();
             kaydetStack.Children.Add(matchGrid);
@@ -766,7 +902,14 @@ namespace EnumDeneme
                 File.WriteAllText(newPath, newCsText);
             }
 
-            kaydetWindow.Show();
+            foreach(Button btn in buttons)
+            {
+                btn.Visibility = Visibility.Collapsed;
+            }
+
+            stackPanel.Children.Add(kaydetStack);
+
+            //kaydetWindow.Show();
 
 
         }
@@ -774,7 +917,15 @@ namespace EnumDeneme
         private void OkKaydetLog_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show(newPath + " Dosyası Kaydedildi.");
-            kaydetWindow.Close();
+
+            foreach (Button btn in buttons)
+            {
+                btn.Visibility = Visibility.Visible;
+            }
+
+            kaydetStack.Visibility = Visibility.Collapsed;
+
+            //kaydetWindow.Close();
         }
 
         private void kaydetWindowClosed(object sender, EventArgs e)
